@@ -10,20 +10,20 @@ import schedule
 import time
 import sys
 
-def check_args(config = []):
-  parms = ("url"
-    , "data_base"
-    , "sync_time"
-    )
+
+def check_args(config=[]):
+  #检测配置文件是否完整
+  parms = ("url", "data_base", "sync_time")
   for parm in parms:
     if parm not in config:
-      print(f"{parm} key is not exists.", file = sys.stderr)
+      print(f"{parm} key is not exists.", file=sys.stderr)
       return False
   return True
 
-def sync_job(db = ""):
+
+def sync_job(db="", url=""):
   #获取URL内容
-  response = requests.get(config["url"])
+  response = requests.get(url)
   xml_content = response.content
 
   #将XML转换为JSON
@@ -49,20 +49,23 @@ def sync_job(db = ""):
         #如果文档不存在，则插入新文档
         collection.insert_one(item)
 
+
 if __name__ == "__main__":
   #读取配置文件
   with open("config.json", "r", encoding="utf-8") as config:
-    config_data = json.load(config)
-    if not check_args(config_data):
+    config = json.load(config)
+    if not check_args(config):
       sys.exit(1)
   sync_scheduler = schedule.Scheduler()
   #读取配置中的时间生成任务
-  if type(config_data["sync_time"]) == list:
-    sync_times = config_data["sync_time"]
-  else
-    sync_times = [config_data["sync_time"]]
+  if type(config["sync_time"]) == list:
+    sync_times = config["sync_time"]
+  else:
+    sync_times = [config["sync_time"]]
   for sync_time in sync_times:
-    sync_scheduler.every().day.at(sync_time).do(sync_job, db = config_data["data_base"])
+    sync_scheduler.every().day.at(sync_time).do(sync_job,
+                                                db=config["data_base"],
+                                                url=config["url"])
 
   while True:
     # 运行所有可以运行的任务
