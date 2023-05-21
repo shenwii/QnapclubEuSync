@@ -1,4 +1,5 @@
 {
   "url": "https://qnapclub.eu/en/repo.xml",
-  "DataBase": "mongodb://localhost"
+  "DataBase": "mongodb://localhost",
+  "sync_time": ["12:00","00:00"]
 }
