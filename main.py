@@ -8,15 +8,22 @@ from pymongo import MongoClient
 from datetime import datetime
 import schedule
 import time
+import sys
 
-#读取配置文件
-with open("config.json", "r", encoding="utf-8") as config:
-  config_data = json.load(config)
+def check_args(config = []):
+  parms = ("url"
+    , "data_base"
+    , "sync_time"
+    )
+  for parm in parms:
+    if parm not in config:
+      print(f"{parm} key is not exists.", file = sys.stderr)
+      return False
+  return True
 
-
-def sync_job():
+def sync_job(db = ""):
   #获取URL内容
-  response = requests.get(config_data["url"])
+  response = requests.get(config["url"])
   xml_content = response.content
 
   #将XML转换为JSON
@@ -28,7 +35,7 @@ def sync_job():
   time_str = now.strftime("%Y%m%d%H")
 
   #建立与MongoDB的连接和选择数据库
-  with MongoClient(config_data["DataBase"]) as client:
+  with MongoClient(db) as client:
     db = client["qnap"]
     collection = db["officialxml" + time_str]
     #增量存储到MongoDB
@@ -42,12 +49,22 @@ def sync_job():
         #如果文档不存在，则插入新文档
         collection.insert_one(item)
 
+if __name__ == "__main__":
+  #读取配置文件
+  with open("config.json", "r", encoding="utf-8") as config:
+    config_data = json.load(config)
+    if not check_args(config_data):
+      sys.exit(1)
+  sync_scheduler = schedule.Scheduler()
+  #读取配置中的时间生成任务
+  if type(config_data["sync_time"]) == list:
+    sync_times = config_data["sync_time"]
+  else
+    sync_times = [config_data["sync_time"]]
+  for sync_time in sync_times:
+    sync_scheduler.every().day.at(sync_time).do(sync_job, db = config_data["data_base"])
 
-#读取配置中的时间生成任务
-for sync_time in config_data["sync_time"]:
-  schedule.every().day.at(sync_time).do(sync_job)
-
-while True:
-  # 运行所有可以运行的任务
-  schedule.run_pending()
-  time.sleep(60)
+  while True:
+    # 运行所有可以运行的任务
+    sync_scheduler.run_pending()
+    time.sleep(60)
