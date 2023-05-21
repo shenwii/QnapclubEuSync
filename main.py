@@ -1,10 +1,13 @@
+#!/usr/bin/python3
+# -*- coding: UTF-8 -*-
+
 import xmltodict
 import json
 import requests
 from pymongo import MongoClient
 from datetime import datetime
 
-with open("config.json", "r") as config:
+with open("config.json", "r", encoding="utf-8") as config:
   config_data = json.load(config)
 
 #获取URL内容
